@@ -16,7 +16,6 @@ public class PlayerController : BaseController
 
     const int NONE = 0;
     
-    [SerializeField]
 	public static PlayerStat playerStat;
 
     List<IDropItem> DropItem;
@@ -95,6 +94,11 @@ public class PlayerController : BaseController
 
     private void Update()
     {
+        if (!ActionCheck())
+        {
+            GetActionInput();
+        }
+
         GetInput();
         Run();
         Attack();
@@ -105,10 +109,21 @@ public class PlayerController : BaseController
     {
         hAxis = Input.GetAxisRaw("Horizontal");
         vAxis = Input.GetAxisRaw("Vertical");
+    }
 
+    void GetActionInput()
+    {
         interactionDown = Input.GetButtonDown("Interaction");
         jumpDown = Input.GetButtonDown("Jump");
         attackDown = Input.GetButtonDown("Attack");
+    }
+
+    bool ActionCheck()
+    {
+        jumpDown = false;
+        attackDown = false;
+        interactionDown = false;
+        return isAttack || isJump;
     }
 
     void StopAllAnimation()
@@ -270,6 +285,12 @@ public class PlayerController : BaseController
         isAttack = true;
     }
 
+    void Hit(int damage)
+    {
+        playerStat.hp -= damage;
+        UIManager.Instance.hpBar.fillAmount = (float)playerStat.hp / (float)playerStat.maxHp;
+    }
+
     IEnumerator GainItem()
     {
         if (interactionDown)
@@ -286,6 +307,14 @@ public class PlayerController : BaseController
         if (dropitem != null)
         {
             dropitem.Gain();
+        }
+    }
+
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        if (collision.gameObject.tag.Equals("Monster"))
+        {
+            Hit(collision.gameObject.GetComponent<MonsterController>().stat.attack);
         }
     }
 }
